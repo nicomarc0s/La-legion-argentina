@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel privado | Legion Argentina</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="admin-body">
+    <main class="admin-shell">
+      <section class="admin-panel">
+        <p class="section-kicker">Ruta privada</p>
+        <h1>Panel de carga de noticias</h1>
+        <p class="admin-intro">
+          Este acceso sirve para cargar noticias nuevas en tu sitio desde el
+          navegador. La proteccion es local y simple, pensada para tu uso
+          personal en esta compu.
+        </p>
+
+        <form class="login-box" id="login-form">
+          <label for="admin-password">Clave de acceso</label>
+          <input
+            id="admin-password"
+            name="admin-password"
+            type="password"
+            placeholder="Ingresa tu clave"
+            required
+          />
+          <button type="submit">Entrar</button>
+          <p class="status-message" id="login-status"></p>
+        </form>
+
+        <section class="editor-box hidden" id="editor-box">
+          <div class="editor-head">
+            <div>
+              <p class="section-kicker">Administrador</p>
+              <h2>Nueva noticia</h2>
+            </div>
+            <button class="secondary-button" id="logout-button" type="button">
+              Cerrar acceso
+            </button>
+          </div>
+
+          <form id="news-form" class="news-form">
+            <label for="news-category">Categoria</label>
+            <select id="news-category" name="news-category" required>
+              <option value="">Seleccionar</option>
+              <option>Argentinos en la Premier</option>
+              <option>Argentinos en La Liga</option>
+              <option>Argentinos en la Serie A</option>
+              <option>Argentinos en la Bundesliga</option>
+              <option>Argentinos en la Ligue 1</option>
+              <option>Europa y Copas</option>
+              <option>Futbol Argentino</option>
+            </select>
+
+            <label for="news-title">Titulo de la noticia</label>
+            <input
+              id="news-title"
+              name="news-title"
+              type="text"
+              placeholder="Ejemplo: Garnacho fue figura en Old Trafford"
+              required
+            />
+
+            <label for="news-summary">Resumen</label>
+            <textarea
+              id="news-summary"
+              name="news-summary"
+              rows="5"
+              placeholder="Escribi un resumen breve de la noticia"
+              required
+            ></textarea>
+
+            <label for="news-image">Imagen de la noticia</label>
+            <input
+              id="news-image"
+              name="news-image"
+              type="file"
+              accept="image/*"
+            />
+            <div class="image-preview hidden" id="image-preview-box">
+              <img id="image-preview" alt="Vista previa de la noticia" />
+            </div>
+
+            <button type="submit">Publicar noticia</button>
+            <p class="status-message" id="news-status"></p>
+          </form>
+
+          <div class="saved-news">
+            <div class="editor-head">
+              <div>
+                <p class="section-kicker">Publicadas</p>
+                <h2>Noticias guardadas</h2>
+              </div>
+            </div>
+            <div class="saved-news-list" id="saved-news-list"></div>
+          </div>
+        </section>
+
+        <a class="back-link" href="index.html">Volver al inicio</a>
+      </section>
+    </main>
+    <script src="admin.js"></script>
+  </body>
+</html>
