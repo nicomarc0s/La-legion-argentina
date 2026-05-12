@@ -9,6 +9,7 @@ const newsForm = document.getElementById("news-form");
 const newsStatus = document.getElementById("news-status");
 const savedNewsList = document.getElementById("saved-news-list");
 const logoutButton = document.getElementById("logout-button");
+const editorModeStatus = document.getElementById("editor-mode-status");
 const newsImageInput = document.getElementById("news-image");
 const imagePreviewBox = document.getElementById("image-preview-box");
 const imagePreview = document.getElementById("image-preview");
@@ -16,7 +17,10 @@ const summaryEditor = document.getElementById("news-summary-editor");
 const summaryHtmlInput = document.getElementById("news-summary-html");
 const fontFamilySelect = document.getElementById("news-font-family");
 const fontSizeSelect = document.getElementById("news-font-size");
+const submitNewsButton = document.getElementById("submit-news-button");
+const cancelEditButton = document.getElementById("cancel-edit-button");
 let selectedImage = "";
+let editingIndex = null;
 
 function readNews() {
   try {
@@ -173,13 +177,24 @@ function renderSavedNews() {
           <div class="news-text">
             ${getSummaryHtml(item)}
           </div>
+          <div class="saved-actions">
+            <button type="button" class="edit-button" data-index="${index}">
+              Editar
+            </button>
           <button type="button" class="delete-button" data-index="${index}">
             Eliminar
           </button>
+          </div>
         </article>
       `
     )
     .join("");
+
+  document.querySelectorAll(".edit-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      startEditing(Number(button.dataset.index));
+    });
+  });
 
   document.querySelectorAll(".delete-button").forEach((button) => {
     button.addEventListener("click", () => {
@@ -188,6 +203,14 @@ function renderSavedNews() {
         (_, itemIndex) => itemIndex !== Number(button.dataset.index)
       );
       writeNews(next);
+      if (editingIndex === Number(button.dataset.index)) {
+        resetEditMode();
+      } else if (
+        editingIndex !== null &&
+        Number(button.dataset.index) < editingIndex
+      ) {
+        editingIndex -= 1;
+      }
       renderSavedNews();
       newsStatus.textContent = "La noticia fue eliminada.";
     });
@@ -212,12 +235,20 @@ function resetEditor() {
   fontSizeSelect.value = "";
 }
 
+function resetEditMode() {
+  editingIndex = null;
+  submitNewsButton.textContent = "Publicar noticia";
+  cancelEditButton.classList.add("hidden");
+  editorModeStatus.textContent = "";
+}
+
 function closeEditor() {
   sessionStorage.removeItem(sessionKey);
   editorBox.classList.add("hidden");
   loginForm.classList.remove("hidden");
   loginForm.reset();
   resetEditor();
+  resetEditMode();
   if (loginStatus) loginStatus.textContent = "";
 }
 
@@ -236,6 +267,35 @@ function runEditorCommand(command, value = null) {
   document.execCommand("styleWithCSS", false, true);
   document.execCommand(command, false, value);
   updateSummaryValue();
+}
+
+function setEditorImage(image) {
+  selectedImage = image || "";
+  if (selectedImage) {
+    imagePreview.src = selectedImage;
+    imagePreviewBox.classList.remove("hidden");
+    return;
+  }
+  imagePreviewBox.classList.add("hidden");
+  imagePreview.removeAttribute("src");
+}
+
+function startEditing(index) {
+  const news = readNews();
+  const item = news[index];
+  if (!item) return;
+
+  editingIndex = index;
+  document.getElementById("news-category").value = item.category || "";
+  document.getElementById("news-title").value = item.title || "";
+  summaryEditor.innerHTML = getSummaryHtml(item);
+  updateSummaryValue();
+  setEditorImage(item.image || "");
+  submitNewsButton.textContent = "Guardar cambios";
+  cancelEditButton.classList.remove("hidden");
+  editorModeStatus.textContent = `Editando: ${item.title}`;
+  newsStatus.textContent = "";
+  editorBox.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 loginForm.addEventListener("submit", (event) => {
@@ -285,20 +345,36 @@ newsForm.addEventListener("submit", (event) => {
   }
 
   const news = readNews();
-  news.unshift({
+  const item = {
     category,
     title,
     summary: summaryText,
     summaryHtml,
     image: selectedImage
-  });
+  };
+
+  const wasEditing = editingIndex !== null;
+
+  if (wasEditing) {
+    news[editingIndex] = item;
+  } else {
+    news.unshift(item);
+  }
   writeNews(news);
   resetEditor();
-  newsStatus.textContent = "La noticia fue publicada en el inicio.";
+  resetEditMode();
+  newsStatus.textContent = wasEditing
+    ? "La noticia fue actualizada."
+    : "La noticia fue publicada en el inicio.";
   renderSavedNews();
 });
 
 logoutButton.addEventListener("click", closeEditor);
+cancelEditButton.addEventListener("click", () => {
+  resetEditor();
+  resetEditMode();
+  newsStatus.textContent = "Edicion cancelada.";
+});
 
 newsImageInput.addEventListener("change", () => {
   const file = newsImageInput.files && newsImageInput.files[0];

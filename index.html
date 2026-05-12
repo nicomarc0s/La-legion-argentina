@@ -283,6 +283,20 @@
     <footer class="footer">
       <p>Legion Argentina | Sitio web de noticias deportivas</p>
     </footer>
+
+    <div class="news-modal hidden" id="news-modal" aria-hidden="true">
+      <div class="news-modal-backdrop" id="news-modal-backdrop"></div>
+      <article class="news-modal-card">
+        <button class="news-modal-close" id="news-modal-close" type="button">
+          Cerrar
+        </button>
+        <p class="card-label" id="news-modal-category"></p>
+        <h2 id="news-modal-title"></h2>
+        <img class="news-modal-image hidden" id="news-modal-image" alt="" />
+        <div class="news-text news-modal-text" id="news-modal-text"></div>
+      </article>
+    </div>
+
     <script src="app.js"></script>
   </body>
 </html>

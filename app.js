@@ -1,4 +1,11 @@
 const storageKey = "legionArgentinaNews";
+const modal = document.getElementById("news-modal");
+const modalBackdrop = document.getElementById("news-modal-backdrop");
+const modalClose = document.getElementById("news-modal-close");
+const modalCategory = document.getElementById("news-modal-category");
+const modalTitle = document.getElementById("news-modal-title");
+const modalImage = document.getElementById("news-modal-image");
+const modalText = document.getElementById("news-modal-text");
 
 function readNews() {
   try {
@@ -134,11 +141,18 @@ function renderItem(item) {
     : "";
 
   return `
-    <article class="news-item">
+    <article
+      class="news-item clickable-news"
+      tabindex="0"
+      role="button"
+      data-news-title="${escapeHtml(item.title)}"
+      data-news-category="${escapeHtml(item.category)}"
+      data-news-image="${item.image ? escapeHtml(item.image) : ""}"
+    >
       ${image}
       <p class="card-label">${escapeHtml(item.category)}</p>
       <h4>${escapeHtml(item.title)}</h4>
-      <div class="news-text">
+      <div class="news-text" data-news-content="true">
         ${getSummaryHtml(item)}
       </div>
     </article>
@@ -172,6 +186,58 @@ function renderNewsByCategory() {
       ? items.map(renderItem).join("")
       : renderEmpty(category);
   });
+
+  attachNewsOpeners();
 }
+
+function openNewsModal(card) {
+  const title = card.dataset.newsTitle || "";
+  const category = card.dataset.newsCategory || "";
+  const image = card.dataset.newsImage || "";
+  const content = card.querySelector("[data-news-content]");
+
+  modalCategory.textContent = category;
+  modalTitle.textContent = title;
+  modalText.innerHTML = content ? content.innerHTML : "";
+
+  if (image) {
+    modalImage.src = image;
+    modalImage.alt = title;
+    modalImage.classList.remove("hidden");
+  } else {
+    modalImage.removeAttribute("src");
+    modalImage.classList.add("hidden");
+  }
+
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function closeNewsModal() {
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+}
+
+function attachNewsOpeners() {
+  document.querySelectorAll(".clickable-news").forEach((card) => {
+    card.addEventListener("click", () => openNewsModal(card));
+    card.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openNewsModal(card);
+      }
+    });
+  });
+}
+
+modalClose.addEventListener("click", closeNewsModal);
+modalBackdrop.addEventListener("click", closeNewsModal);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !modal.classList.contains("hidden")) {
+    closeNewsModal();
+  }
+});
 
 renderNewsByCategory();

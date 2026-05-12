@@ -40,6 +40,7 @@
               Cerrar acceso
             </button>
           </div>
+          <p class="status-message neutral-message" id="editor-mode-status"></p>
 
           <form id="news-form" class="news-form">
             <label for="news-category">Categoria</label>
@@ -116,7 +117,16 @@
               <img id="image-preview" alt="Vista previa de la noticia" />
             </div>
 
-            <button type="submit">Publicar noticia</button>
+            <div class="form-actions">
+              <button type="submit" id="submit-news-button">Publicar noticia</button>
+              <button
+                type="button"
+                class="secondary-button hidden"
+                id="cancel-edit-button"
+              >
+                Cancelar edicion
+              </button>
+            </div>
             <p class="status-message" id="news-status"></p>
           </form>
 
