@@ -1,4 +1,5 @@
-const storageKey = "legionArgentinaNews";
+const publicNewsFile = "news.json";
+const legacyStorageKey = "legionArgentinaNews";
 const modal = document.getElementById("news-modal");
 const modalBackdrop = document.getElementById("news-modal-backdrop");
 const modalClose = document.getElementById("news-modal-close");
@@ -7,14 +8,29 @@ const modalTitle = document.getElementById("news-modal-title");
 const modalImage = document.getElementById("news-modal-image");
 const modalText = document.getElementById("news-modal-text");
 
-function readNews() {
+function readLegacyNews() {
   try {
-    const raw = localStorage.getItem(storageKey);
+    const raw = localStorage.getItem(legacyStorageKey);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch (error) {
     return [];
+  }
+}
+
+async function readNews() {
+  try {
+    const response = await fetch(`${publicNewsFile}?v=${Date.now()}`, {
+      cache: "no-store"
+    });
+    if (!response.ok) {
+      throw new Error("No se pudo leer news.json");
+    }
+    const parsed = await response.json();
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return readLegacyNews();
   }
 }
 
@@ -174,22 +190,6 @@ function renderEmpty(category) {
   `;
 }
 
-function renderNewsByCategory() {
-  const news = readNews();
-  const containers = document.querySelectorAll(".news-list[data-category]");
-
-  containers.forEach((container) => {
-    const category = container.dataset.category;
-    const items = news.filter((item) => item.category === category);
-
-    container.innerHTML = items.length
-      ? items.map(renderItem).join("")
-      : renderEmpty(category);
-  });
-
-  attachNewsOpeners();
-}
-
 function openNewsModal(card) {
   const title = card.dataset.newsTitle || "";
   const category = card.dataset.newsCategory || "";
@@ -230,6 +230,22 @@ function attachNewsOpeners() {
       }
     });
   });
+}
+
+async function renderNewsByCategory() {
+  const news = await readNews();
+  const containers = document.querySelectorAll(".news-list[data-category]");
+
+  containers.forEach((container) => {
+    const category = container.dataset.category;
+    const items = news.filter((item) => item.category === category);
+
+    container.innerHTML = items.length
+      ? items.map(renderItem).join("")
+      : renderEmpty(category);
+  });
+
+  attachNewsOpeners();
 }
 
 modalClose.addEventListener("click", closeNewsModal);

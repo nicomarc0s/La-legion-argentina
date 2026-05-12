@@ -1,0 +1,10 @@
+[
+  {
+    "id": "bienvenida-legion-argentina",
+    "category": "Europa y Copas",
+    "title": "Bienvenidos a Legion Argentina",
+    "summary": "Este archivo news.json es ahora la fuente publica de noticias del sitio.",
+    "summaryHtml": "<p>Este archivo <strong>news.json</strong> es ahora la fuente publica de noticias del sitio.</p><p>Cada vez que edites o agregues una nota desde el panel, descargalo y subi la nueva version a GitHub para que todos vean los cambios.</p>",
+    "image": ""
+  }
+]

@@ -534,6 +534,19 @@ button {
   margin-top: 24px;
 }
 
+.publish-panel {
+  margin-bottom: 18px;
+  padding: 18px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.publish-help {
+  margin: 0 0 14px;
+  line-height: 1.6;
+}
+
 .form-actions,
 .saved-actions {
   display: flex;

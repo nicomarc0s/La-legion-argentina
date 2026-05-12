@@ -1,4 +1,5 @@
-const storageKey = "legionArgentinaNews";
+const publicNewsFile = "news.json";
+const legacyStorageKey = "legionArgentinaNews";
 const sessionKey = "legionArgentinaAdminOpen";
 const adminPassword = "Legion2026";
 
@@ -10,6 +11,7 @@ const newsStatus = document.getElementById("news-status");
 const savedNewsList = document.getElementById("saved-news-list");
 const logoutButton = document.getElementById("logout-button");
 const editorModeStatus = document.getElementById("editor-mode-status");
+const publishStatus = document.getElementById("publish-status");
 const newsImageInput = document.getElementById("news-image");
 const imagePreviewBox = document.getElementById("image-preview-box");
 const imagePreview = document.getElementById("image-preview");
@@ -19,12 +21,16 @@ const fontFamilySelect = document.getElementById("news-font-family");
 const fontSizeSelect = document.getElementById("news-font-size");
 const submitNewsButton = document.getElementById("submit-news-button");
 const cancelEditButton = document.getElementById("cancel-edit-button");
+const downloadJsonButton = document.getElementById("download-json-button");
+const reloadNewsButton = document.getElementById("reload-news-button");
+
 let selectedImage = "";
 let editingIndex = null;
+let workingNews = [];
 
-function readNews() {
+function readLegacyNews() {
   try {
-    const raw = localStorage.getItem(storageKey);
+    const raw = localStorage.getItem(legacyStorageKey);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -33,8 +39,19 @@ function readNews() {
   }
 }
 
-function writeNews(news) {
-  localStorage.setItem(storageKey, JSON.stringify(news));
+async function loadPublicNews() {
+  try {
+    const response = await fetch(`${publicNewsFile}?v=${Date.now()}`, {
+      cache: "no-store"
+    });
+    if (!response.ok) {
+      throw new Error("No se pudo cargar news.json");
+    }
+    const parsed = await response.json();
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    return readLegacyNews();
+  }
 }
 
 function escapeHtml(text) {
@@ -154,10 +171,29 @@ function getSummaryHtml(item) {
   return legacyParagraphs(item.summary || "");
 }
 
-function renderSavedNews() {
-  const news = readNews();
+function slugify(text) {
+  return String(text)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
+}
 
-  if (!news.length) {
+function buildNewsItem(category, title, summaryText, summaryHtml, image, currentId) {
+  return {
+    id: currentId || `${slugify(title)}-${Date.now()}`,
+    category,
+    title,
+    summary: summaryText,
+    summaryHtml,
+    image
+  };
+}
+
+function renderSavedNews() {
+  if (!workingNews.length) {
     savedNewsList.innerHTML = `
       <article class="saved-item">
         <p class="card-label">Todavia no hay noticias</p>
@@ -167,7 +203,7 @@ function renderSavedNews() {
     return;
   }
 
-  savedNewsList.innerHTML = news
+  savedNewsList.innerHTML = workingNews
     .map(
       (item, index) => `
         <article class="saved-item">
@@ -181,9 +217,9 @@ function renderSavedNews() {
             <button type="button" class="edit-button" data-index="${index}">
               Editar
             </button>
-          <button type="button" class="delete-button" data-index="${index}">
-            Eliminar
-          </button>
+            <button type="button" class="delete-button" data-index="${index}">
+              Eliminar
+            </button>
           </div>
         </article>
       `
@@ -198,21 +234,18 @@ function renderSavedNews() {
 
   document.querySelectorAll(".delete-button").forEach((button) => {
     button.addEventListener("click", () => {
-      const current = readNews();
-      const next = current.filter(
-        (_, itemIndex) => itemIndex !== Number(button.dataset.index)
-      );
-      writeNews(next);
-      if (editingIndex === Number(button.dataset.index)) {
+      const index = Number(button.dataset.index);
+      workingNews = workingNews.filter((_, itemIndex) => itemIndex !== index);
+      if (editingIndex === index) {
+        resetEditor();
         resetEditMode();
-      } else if (
-        editingIndex !== null &&
-        Number(button.dataset.index) < editingIndex
-      ) {
+      } else if (editingIndex !== null && index < editingIndex) {
         editingIndex -= 1;
       }
       renderSavedNews();
-      newsStatus.textContent = "La noticia fue eliminada.";
+      newsStatus.textContent = "La noticia fue eliminada del archivo en edicion.";
+      publishStatus.textContent =
+        "Descarga el nuevo news.json y subilo a GitHub para reflejar este cambio.";
     });
   });
 }
@@ -237,7 +270,7 @@ function resetEditor() {
 
 function resetEditMode() {
   editingIndex = null;
-  submitNewsButton.textContent = "Publicar noticia";
+  submitNewsButton.textContent = "Agregar al archivo";
   cancelEditButton.classList.add("hidden");
   editorModeStatus.textContent = "";
 }
@@ -281,8 +314,7 @@ function setEditorImage(image) {
 }
 
 function startEditing(index) {
-  const news = readNews();
-  const item = news[index];
+  const item = workingNews[index];
   if (!item) return;
 
   editingIndex = index;
@@ -291,11 +323,35 @@ function startEditing(index) {
   summaryEditor.innerHTML = getSummaryHtml(item);
   updateSummaryValue();
   setEditorImage(item.image || "");
-  submitNewsButton.textContent = "Guardar cambios";
+  submitNewsButton.textContent = "Guardar en el archivo";
   cancelEditButton.classList.remove("hidden");
   editorModeStatus.textContent = `Editando: ${item.title}`;
   newsStatus.textContent = "";
   editorBox.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function downloadNewsJson() {
+  const blob = new Blob([JSON.stringify(workingNews, null, 2)], {
+    type: "application/json"
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "news.json";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  publishStatus.textContent =
+    "Se descargo news.json. Ahora subilo a GitHub para publicar los cambios.";
+}
+
+async function reloadFromFile() {
+  workingNews = await loadPublicNews();
+  renderSavedNews();
+  resetEditor();
+  resetEditMode();
+  publishStatus.textContent = "Se recargo el contenido desde news.json.";
 }
 
 loginForm.addEventListener("submit", (event) => {
@@ -340,33 +396,39 @@ newsForm.addEventListener("submit", (event) => {
   const summaryText = summaryEditor.innerText.trim();
 
   if (!category || !title || !summaryText) {
-    newsStatus.textContent = "Completa categoria, titulo y resumen antes de publicar.";
+    newsStatus.textContent = "Completa categoria, titulo y resumen antes de guardar.";
     return;
   }
 
-  const news = readNews();
-  const item = {
+  const currentId =
+    editingIndex !== null && workingNews[editingIndex]
+      ? workingNews[editingIndex].id
+      : "";
+  const item = buildNewsItem(
     category,
     title,
-    summary: summaryText,
+    summaryText,
     summaryHtml,
-    image: selectedImage
-  };
+    selectedImage,
+    currentId
+  );
 
   const wasEditing = editingIndex !== null;
 
   if (wasEditing) {
-    news[editingIndex] = item;
+    workingNews[editingIndex] = item;
   } else {
-    news.unshift(item);
+    workingNews.unshift(item);
   }
-  writeNews(news);
+
   resetEditor();
   resetEditMode();
-  newsStatus.textContent = wasEditing
-    ? "La noticia fue actualizada."
-    : "La noticia fue publicada en el inicio.";
   renderSavedNews();
+  newsStatus.textContent = wasEditing
+    ? "La noticia fue actualizada en el archivo en edicion."
+    : "La noticia fue agregada al archivo en edicion.";
+  publishStatus.textContent =
+    "Descarga el nuevo news.json y subilo a GitHub para publicarlo.";
 });
 
 logoutButton.addEventListener("click", closeEditor);
@@ -375,6 +437,8 @@ cancelEditButton.addEventListener("click", () => {
   resetEditMode();
   newsStatus.textContent = "Edicion cancelada.";
 });
+downloadJsonButton.addEventListener("click", downloadNewsJson);
+reloadNewsButton.addEventListener("click", reloadFromFile);
 
 newsImageInput.addEventListener("change", () => {
   const file = newsImageInput.files && newsImageInput.files[0];
@@ -396,6 +460,17 @@ newsImageInput.addEventListener("change", () => {
   };
   reader.readAsDataURL(file);
 });
+
+async function initAdmin() {
+  workingNews = await loadPublicNews();
+  renderSavedNews();
+  if (readLegacyNews().length) {
+    publishStatus.textContent =
+      "Se detectaron noticias viejas guardadas en este navegador. Ahora el sitio publica desde news.json.";
+  }
+}
+
+initAdmin();
 
 if (sessionStorage.getItem(sessionKey) === "open") {
   openEditor();

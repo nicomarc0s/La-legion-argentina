@@ -12,9 +12,9 @@
         <p class="section-kicker">Ruta privada</p>
         <h1>Panel de carga de noticias</h1>
         <p class="admin-intro">
-          Este acceso sirve para cargar noticias nuevas en tu sitio desde el
-          navegador. La proteccion es local y simple, pensada para tu uso
-          personal en esta compu.
+          Este panel ahora trabaja con el archivo publico del sitio. Editas las
+          noticias aca, descargas el nuevo <strong>news.json</strong> y despues
+          lo subis a GitHub para que todos vean los cambios.
         </p>
 
         <form class="login-box" id="login-form">
@@ -136,6 +136,21 @@
                 <p class="section-kicker">Publicadas</p>
                 <h2>Noticias guardadas</h2>
               </div>
+            </div>
+            <div class="publish-panel">
+              <p class="publish-help">
+                Cuando termines de editar, descarga el archivo y reemplazalo en
+                tu repositorio de GitHub.
+              </p>
+              <div class="form-actions">
+                <button type="button" id="download-json-button">
+                  Descargar news.json
+                </button>
+                <button type="button" class="secondary-button" id="reload-news-button">
+                  Recargar desde news.json
+                </button>
+              </div>
+              <p class="status-message neutral-message" id="publish-status"></p>
             </div>
             <div class="saved-news-list" id="saved-news-list"></div>
           </div>
