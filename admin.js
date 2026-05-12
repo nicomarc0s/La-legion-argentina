@@ -29,6 +29,30 @@ function writeNews(news) {
   localStorage.setItem(storageKey, JSON.stringify(news));
 }
 
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function formatParagraphs(text) {
+  const parts = String(text)
+    .split(/\n\s*\n/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!parts.length) {
+    return "<p></p>";
+  }
+
+  return parts
+    .map((part) => `<p>${escapeHtml(part).replaceAll("\n", "<br>")}</p>`)
+    .join("");
+}
+
 function renderSavedNews() {
   const news = readNews();
 
@@ -46,10 +70,12 @@ function renderSavedNews() {
     .map(
       (item, index) => `
         <article class="saved-item">
-          ${item.image ? `<img class="news-image" src="${item.image}" alt="${item.title}">` : ""}
-          <p class="card-label">${item.category}</p>
-          <h3>${item.title}</h3>
-          <p>${item.summary}</p>
+          ${item.image ? `<img class="news-image" src="${item.image}" alt="${escapeHtml(item.title)}">` : ""}
+          <p class="card-label">${escapeHtml(item.category)}</p>
+          <h3>${escapeHtml(item.title)}</h3>
+          <div class="news-text">
+            ${formatParagraphs(item.summary)}
+          </div>
           <button type="button" class="delete-button" data-index="${index}">
             Eliminar
           </button>

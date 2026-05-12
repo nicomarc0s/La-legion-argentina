@@ -343,6 +343,15 @@ button {
   line-height: 1.6;
 }
 
+.news-text p {
+  margin: 0 0 12px;
+  line-height: 1.7;
+}
+
+.news-text p:last-child {
+  margin-bottom: 0;
+}
+
 .placeholder-news {
   background: linear-gradient(180deg, rgba(255, 250, 242, 0.96), rgba(240, 237, 230, 1));
 }
