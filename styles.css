@@ -352,6 +352,12 @@ button {
   margin-bottom: 0;
 }
 
+.news-text ul,
+.news-text ol {
+  margin: 0 0 12px 22px;
+  padding: 0;
+}
+
 .placeholder-news {
   background: linear-gradient(180deg, rgba(255, 250, 242, 0.96), rgba(240, 237, 230, 1));
 }
@@ -453,24 +459,42 @@ button {
   gap: 12px;
 }
 
-.format-grid {
+.editor-toolbar {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(110px, max-content));
   gap: 12px;
-  align-items: end;
-}
-
-.checkbox-row {
-  display: flex;
   align-items: center;
-  gap: 10px;
-  min-height: 48px;
-  font-weight: 600;
+  padding: 12px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
 
-.checkbox-row input {
-  width: 18px;
-  height: 18px;
+.tool-button {
+  min-width: 48px;
+  padding: 10px 14px;
+  background: rgba(36, 48, 79, 0.1);
+  color: var(--ink);
+}
+
+.rich-editor {
+  min-height: 220px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  line-height: 1.7;
+  overflow-wrap: break-word;
+}
+
+.rich-editor:focus {
+  outline: 2px solid rgba(37, 88, 217, 0.28);
+  outline-offset: 1px;
+}
+
+.rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
 }
 
 .login-box,
@@ -488,7 +512,6 @@ button {
 }
 
 .news-form input,
-.news-form textarea,
 .news-form select,
 .login-box input {
   width: 100%;

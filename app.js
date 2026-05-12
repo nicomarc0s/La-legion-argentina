@@ -20,7 +20,7 @@ function escapeHtml(text) {
     .replaceAll("'", "&#39;");
 }
 
-function formatParagraphs(text) {
+function legacyParagraphs(text) {
   const parts = String(text)
     .split(/\n\s*\n/)
     .map((part) => part.trim())
@@ -35,22 +35,97 @@ function formatParagraphs(text) {
     .join("");
 }
 
-function buildTextStyle(style = {}) {
-  const declarations = [];
+function sanitizeStyle(styleText) {
+  const allowed = new Set([
+    "font-family",
+    "font-size",
+    "font-weight",
+    "font-style",
+    "text-decoration",
+    "text-decoration-line"
+  ]);
 
-  if (style.fontFamily && style.fontFamily !== "default") {
-    declarations.push(`font-family: ${style.fontFamily}`);
+  return styleText
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const divider = entry.indexOf(":");
+      if (divider === -1) return "";
+      const property = entry.slice(0, divider).trim().toLowerCase();
+      const value = entry.slice(divider + 1).trim();
+      return allowed.has(property) ? `${property}: ${value}` : "";
+    })
+    .filter(Boolean)
+    .join("; ");
+}
+
+function sanitizeSummaryHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+
+  const allowedTags = new Set([
+    "P",
+    "BR",
+    "B",
+    "STRONG",
+    "I",
+    "EM",
+    "U",
+    "UL",
+    "OL",
+    "LI",
+    "SPAN",
+    "DIV"
+  ]);
+
+  function cleanNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return document.createTextNode(node.textContent || "");
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return document.createDocumentFragment();
+    }
+
+    const tagName = node.tagName.toUpperCase();
+    const normalizedTag = tagName === "DIV" ? "P" : tagName;
+
+    if (!allowedTags.has(tagName)) {
+      const fragment = document.createDocumentFragment();
+      Array.from(node.childNodes).forEach((child) => {
+        fragment.appendChild(cleanNode(child));
+      });
+      return fragment;
+    }
+
+    const element = document.createElement(normalizedTag.toLowerCase());
+    const safeStyle = sanitizeStyle(node.getAttribute("style") || "");
+    if (safeStyle) {
+      element.setAttribute("style", safeStyle);
+    }
+
+    Array.from(node.childNodes).forEach((child) => {
+      element.appendChild(cleanNode(child));
+    });
+
+    return element;
   }
 
-  if (style.fontSize) {
-    declarations.push(`font-size: ${Number(style.fontSize)}px`);
+  const wrapper = document.createElement("div");
+  Array.from(template.content.childNodes).forEach((child) => {
+    wrapper.appendChild(cleanNode(child));
+  });
+
+  return wrapper.innerHTML.trim();
+}
+
+function getSummaryHtml(item) {
+  if (item.summaryHtml) {
+    return sanitizeSummaryHtml(item.summaryHtml);
   }
 
-  if (style.bold) {
-    declarations.push("font-weight: 700");
-  }
-
-  return declarations.length ? ` style="${declarations.join("; ")}"` : "";
+  return legacyParagraphs(item.summary || "");
 }
 
 function renderItem(item) {
@@ -63,8 +138,8 @@ function renderItem(item) {
       ${image}
       <p class="card-label">${escapeHtml(item.category)}</p>
       <h4>${escapeHtml(item.title)}</h4>
-      <div class="news-text"${buildTextStyle(item.textStyle)}>
-        ${formatParagraphs(item.summary)}
+      <div class="news-text">
+        ${getSummaryHtml(item)}
       </div>
     </article>
   `;

@@ -63,42 +63,47 @@
               required
             />
 
-            <label for="news-summary">Resumen</label>
-            <textarea
-              id="news-summary"
-              name="news-summary"
-              rows="5"
-              placeholder="Escribi un resumen breve de la noticia"
-              required
-            ></textarea>
+            <label for="news-summary-editor">Resumen</label>
+            <div class="editor-toolbar" id="editor-toolbar">
+              <select id="news-font-family" name="news-font-family">
+                <option value="">Tipo de letra</option>
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Tahoma">Tahoma</option>
+                <option value="Trebuchet MS">Trebuchet</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Courier New">Courier New</option>
+              </select>
 
-            <div class="format-grid">
-              <div>
-                <label for="news-font-family">Tipo de letra</label>
-                <select id="news-font-family" name="news-font-family">
-                  <option value="default">Clasica del sitio</option>
-                  <option value="Georgia, serif">Georgia</option>
-                  <option value="'Trebuchet MS', 'Segoe UI', sans-serif">Trebuchet</option>
-                  <option value="'Courier New', monospace">Courier New</option>
-                  <option value="Verdana, sans-serif">Verdana</option>
-                </select>
-              </div>
+              <select id="news-font-size" name="news-font-size">
+                <option value="">Tamano</option>
+                <option value="2">Pequeno</option>
+                <option value="3">Normal</option>
+                <option value="4">Grande</option>
+                <option value="5">Muy grande</option>
+              </select>
 
-              <div>
-                <label for="news-font-size">Tamano de letra</label>
-                <select id="news-font-size" name="news-font-size">
-                  <option value="16">Normal</option>
-                  <option value="14">Pequeno</option>
-                  <option value="18">Grande</option>
-                  <option value="20">Muy grande</option>
-                </select>
-              </div>
-
-              <label class="checkbox-row" for="news-bold">
-                <input id="news-bold" name="news-bold" type="checkbox" />
-                <span>Poner texto en negrita</span>
-              </label>
+              <button type="button" class="tool-button" data-command="bold">
+                B
+              </button>
+              <button type="button" class="tool-button" data-command="italic">
+                I
+              </button>
+              <button type="button" class="tool-button" data-command="underline">
+                U
+              </button>
+              <button type="button" class="tool-button" data-command="insertUnorderedList">
+                Lista
+              </button>
             </div>
+
+            <div
+              id="news-summary-editor"
+              class="rich-editor"
+              contenteditable="true"
+              data-placeholder="Escribi el resumen de la noticia. Usa Enter para separar parrafos."
+            ></div>
+            <input id="news-summary-html" name="news-summary-html" type="hidden" />
 
             <label for="news-image">Imagen de la noticia</label>
             <input

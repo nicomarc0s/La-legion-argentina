@@ -12,9 +12,10 @@ const logoutButton = document.getElementById("logout-button");
 const newsImageInput = document.getElementById("news-image");
 const imagePreviewBox = document.getElementById("image-preview-box");
 const imagePreview = document.getElementById("image-preview");
-const newsFontFamilyInput = document.getElementById("news-font-family");
-const newsFontSizeInput = document.getElementById("news-font-size");
-const newsBoldInput = document.getElementById("news-bold");
+const summaryEditor = document.getElementById("news-summary-editor");
+const summaryHtmlInput = document.getElementById("news-summary-html");
+const fontFamilySelect = document.getElementById("news-font-family");
+const fontSizeSelect = document.getElementById("news-font-size");
 let selectedImage = "";
 
 function readNews() {
@@ -41,7 +42,7 @@ function escapeHtml(text) {
     .replaceAll("'", "&#39;");
 }
 
-function formatParagraphs(text) {
+function legacyParagraphs(text) {
   const parts = String(text)
     .split(/\n\s*\n/)
     .map((part) => part.trim())
@@ -56,22 +57,97 @@ function formatParagraphs(text) {
     .join("");
 }
 
-function buildTextStyle(style = {}) {
-  const declarations = [];
+function sanitizeStyle(styleText) {
+  const allowed = new Set([
+    "font-family",
+    "font-size",
+    "font-weight",
+    "font-style",
+    "text-decoration",
+    "text-decoration-line"
+  ]);
 
-  if (style.fontFamily && style.fontFamily !== "default") {
-    declarations.push(`font-family: ${style.fontFamily}`);
+  return styleText
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const divider = entry.indexOf(":");
+      if (divider === -1) return "";
+      const property = entry.slice(0, divider).trim().toLowerCase();
+      const value = entry.slice(divider + 1).trim();
+      return allowed.has(property) ? `${property}: ${value}` : "";
+    })
+    .filter(Boolean)
+    .join("; ");
+}
+
+function sanitizeSummaryHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+
+  const allowedTags = new Set([
+    "P",
+    "BR",
+    "B",
+    "STRONG",
+    "I",
+    "EM",
+    "U",
+    "UL",
+    "OL",
+    "LI",
+    "SPAN",
+    "DIV"
+  ]);
+
+  function cleanNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return document.createTextNode(node.textContent || "");
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return document.createDocumentFragment();
+    }
+
+    const tagName = node.tagName.toUpperCase();
+    const normalizedTag = tagName === "DIV" ? "P" : tagName;
+
+    if (!allowedTags.has(tagName)) {
+      const fragment = document.createDocumentFragment();
+      Array.from(node.childNodes).forEach((child) => {
+        fragment.appendChild(cleanNode(child));
+      });
+      return fragment;
+    }
+
+    const element = document.createElement(normalizedTag.toLowerCase());
+    const safeStyle = sanitizeStyle(node.getAttribute("style") || "");
+    if (safeStyle) {
+      element.setAttribute("style", safeStyle);
+    }
+
+    Array.from(node.childNodes).forEach((child) => {
+      element.appendChild(cleanNode(child));
+    });
+
+    return element;
   }
 
-  if (style.fontSize) {
-    declarations.push(`font-size: ${Number(style.fontSize)}px`);
+  const wrapper = document.createElement("div");
+  Array.from(template.content.childNodes).forEach((child) => {
+    wrapper.appendChild(cleanNode(child));
+  });
+
+  return wrapper.innerHTML.trim();
+}
+
+function getSummaryHtml(item) {
+  if (item.summaryHtml) {
+    return sanitizeSummaryHtml(item.summaryHtml);
   }
 
-  if (style.bold) {
-    declarations.push("font-weight: 700");
-  }
-
-  return declarations.length ? ` style="${declarations.join("; ")}"` : "";
+  return legacyParagraphs(item.summary || "");
 }
 
 function renderSavedNews() {
@@ -94,8 +170,8 @@ function renderSavedNews() {
           ${item.image ? `<img class="news-image" src="${item.image}" alt="${escapeHtml(item.title)}">` : ""}
           <p class="card-label">${escapeHtml(item.category)}</p>
           <h3>${escapeHtml(item.title)}</h3>
-          <div class="news-text"${buildTextStyle(item.textStyle)}>
-            ${formatParagraphs(item.summary)}
+          <div class="news-text">
+            ${getSummaryHtml(item)}
           </div>
           <button type="button" class="delete-button" data-index="${index}">
             Eliminar
@@ -125,21 +201,41 @@ function openEditor() {
   renderSavedNews();
 }
 
+function resetEditor() {
+  newsForm.reset();
+  selectedImage = "";
+  imagePreviewBox.classList.add("hidden");
+  imagePreview.removeAttribute("src");
+  summaryEditor.innerHTML = "";
+  summaryHtmlInput.value = "";
+  fontFamilySelect.value = "";
+  fontSizeSelect.value = "";
+}
+
 function closeEditor() {
   sessionStorage.removeItem(sessionKey);
   editorBox.classList.add("hidden");
   loginForm.classList.remove("hidden");
   loginForm.reset();
-  selectedImage = "";
-  imagePreviewBox.classList.add("hidden");
-  imagePreview.removeAttribute("src");
+  resetEditor();
   if (loginStatus) loginStatus.textContent = "";
+}
+
+function updateSummaryValue() {
+  summaryHtmlInput.value = sanitizeSummaryHtml(summaryEditor.innerHTML);
 }
 
 function resetImagePreview() {
   selectedImage = "";
   imagePreviewBox.classList.add("hidden");
   imagePreview.removeAttribute("src");
+}
+
+function runEditorCommand(command, value = null) {
+  summaryEditor.focus();
+  document.execCommand("styleWithCSS", false, true);
+  document.execCommand(command, false, value);
+  updateSummaryValue();
 }
 
 loginForm.addEventListener("submit", (event) => {
@@ -155,28 +251,49 @@ loginForm.addEventListener("submit", (event) => {
   loginStatus.textContent = "La clave no es correcta.";
 });
 
+summaryEditor.addEventListener("input", updateSummaryValue);
+
+document.querySelectorAll(".tool-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    runEditorCommand(button.dataset.command);
+  });
+});
+
+fontFamilySelect.addEventListener("change", () => {
+  if (fontFamilySelect.value) {
+    runEditorCommand("fontName", fontFamilySelect.value);
+  }
+});
+
+fontSizeSelect.addEventListener("change", () => {
+  if (fontSizeSelect.value) {
+    runEditorCommand("fontSize", fontSizeSelect.value);
+  }
+});
+
 newsForm.addEventListener("submit", (event) => {
   event.preventDefault();
 
   const category = document.getElementById("news-category").value.trim();
   const title = document.getElementById("news-title").value.trim();
-  const summary = document.getElementById("news-summary").value.trim();
-  const textStyle = {
-    fontFamily: newsFontFamilyInput.value,
-    fontSize: newsFontSizeInput.value,
-    bold: newsBoldInput.checked
-  };
+  const summaryHtml = sanitizeSummaryHtml(summaryEditor.innerHTML);
+  const summaryText = summaryEditor.innerText.trim();
 
-  if (!category || !title || !summary) {
-    newsStatus.textContent = "Completa todos los campos antes de publicar.";
+  if (!category || !title || !summaryText) {
+    newsStatus.textContent = "Completa categoria, titulo y resumen antes de publicar.";
     return;
   }
 
   const news = readNews();
-  news.unshift({ category, title, summary, image: selectedImage, textStyle });
+  news.unshift({
+    category,
+    title,
+    summary: summaryText,
+    summaryHtml,
+    image: selectedImage
+  });
   writeNews(news);
-  newsForm.reset();
-  resetImagePreview();
+  resetEditor();
   newsStatus.textContent = "La noticia fue publicada en el inicio.";
   renderSavedNews();
 });
