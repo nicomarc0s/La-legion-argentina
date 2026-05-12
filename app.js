@@ -35,6 +35,24 @@ function formatParagraphs(text) {
     .join("");
 }
 
+function buildTextStyle(style = {}) {
+  const declarations = [];
+
+  if (style.fontFamily && style.fontFamily !== "default") {
+    declarations.push(`font-family: ${style.fontFamily}`);
+  }
+
+  if (style.fontSize) {
+    declarations.push(`font-size: ${Number(style.fontSize)}px`);
+  }
+
+  if (style.bold) {
+    declarations.push("font-weight: 700");
+  }
+
+  return declarations.length ? ` style="${declarations.join("; ")}"` : "";
+}
+
 function renderItem(item) {
   const image = item.image
     ? `<img class="news-image" src="${item.image}" alt="${escapeHtml(item.title)}">`
@@ -45,7 +63,7 @@ function renderItem(item) {
       ${image}
       <p class="card-label">${escapeHtml(item.category)}</p>
       <h4>${escapeHtml(item.title)}</h4>
-      <div class="news-text">
+      <div class="news-text"${buildTextStyle(item.textStyle)}>
         ${formatParagraphs(item.summary)}
       </div>
     </article>

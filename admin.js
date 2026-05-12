@@ -12,6 +12,9 @@ const logoutButton = document.getElementById("logout-button");
 const newsImageInput = document.getElementById("news-image");
 const imagePreviewBox = document.getElementById("image-preview-box");
 const imagePreview = document.getElementById("image-preview");
+const newsFontFamilyInput = document.getElementById("news-font-family");
+const newsFontSizeInput = document.getElementById("news-font-size");
+const newsBoldInput = document.getElementById("news-bold");
 let selectedImage = "";
 
 function readNews() {
@@ -53,6 +56,24 @@ function formatParagraphs(text) {
     .join("");
 }
 
+function buildTextStyle(style = {}) {
+  const declarations = [];
+
+  if (style.fontFamily && style.fontFamily !== "default") {
+    declarations.push(`font-family: ${style.fontFamily}`);
+  }
+
+  if (style.fontSize) {
+    declarations.push(`font-size: ${Number(style.fontSize)}px`);
+  }
+
+  if (style.bold) {
+    declarations.push("font-weight: 700");
+  }
+
+  return declarations.length ? ` style="${declarations.join("; ")}"` : "";
+}
+
 function renderSavedNews() {
   const news = readNews();
 
@@ -73,7 +94,7 @@ function renderSavedNews() {
           ${item.image ? `<img class="news-image" src="${item.image}" alt="${escapeHtml(item.title)}">` : ""}
           <p class="card-label">${escapeHtml(item.category)}</p>
           <h3>${escapeHtml(item.title)}</h3>
-          <div class="news-text">
+          <div class="news-text"${buildTextStyle(item.textStyle)}>
             ${formatParagraphs(item.summary)}
           </div>
           <button type="button" class="delete-button" data-index="${index}">
@@ -140,6 +161,11 @@ newsForm.addEventListener("submit", (event) => {
   const category = document.getElementById("news-category").value.trim();
   const title = document.getElementById("news-title").value.trim();
   const summary = document.getElementById("news-summary").value.trim();
+  const textStyle = {
+    fontFamily: newsFontFamilyInput.value,
+    fontSize: newsFontSizeInput.value,
+    bold: newsBoldInput.checked
+  };
 
   if (!category || !title || !summary) {
     newsStatus.textContent = "Completa todos los campos antes de publicar.";
@@ -147,7 +173,7 @@ newsForm.addEventListener("submit", (event) => {
   }
 
   const news = readNews();
-  news.unshift({ category, title, summary, image: selectedImage });
+  news.unshift({ category, title, summary, image: selectedImage, textStyle });
   writeNews(news);
   newsForm.reset();
   resetImagePreview();

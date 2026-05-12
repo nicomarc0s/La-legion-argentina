@@ -72,6 +72,34 @@
               required
             ></textarea>
 
+            <div class="format-grid">
+              <div>
+                <label for="news-font-family">Tipo de letra</label>
+                <select id="news-font-family" name="news-font-family">
+                  <option value="default">Clasica del sitio</option>
+                  <option value="Georgia, serif">Georgia</option>
+                  <option value="'Trebuchet MS', 'Segoe UI', sans-serif">Trebuchet</option>
+                  <option value="'Courier New', monospace">Courier New</option>
+                  <option value="Verdana, sans-serif">Verdana</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="news-font-size">Tamano de letra</label>
+                <select id="news-font-size" name="news-font-size">
+                  <option value="16">Normal</option>
+                  <option value="14">Pequeno</option>
+                  <option value="18">Grande</option>
+                  <option value="20">Muy grande</option>
+                </select>
+              </div>
+
+              <label class="checkbox-row" for="news-bold">
+                <input id="news-bold" name="news-bold" type="checkbox" />
+                <span>Poner texto en negrita</span>
+              </label>
+            </div>
+
             <label for="news-image">Imagen de la noticia</label>
             <input
               id="news-image"
